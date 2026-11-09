@@ -59,8 +59,12 @@ memoryRouter.post(
   '/memory/messages',
   asyncHandler(async (req, res) => {
     const { userId } = requireAuth(req);
-    const { items } = z
-      .object({ items: z.array(syncItem).min(1).max(config.maxSyncBatch) })
+    const { items, skip_summaries: skipSummaries } = z
+      .object({
+        items: z.array(syncItem).min(1).max(config.maxSyncBatch),
+        /** Bulk imports set this so thousands of messages do not trigger a summary call per topic. */
+        skip_summaries: z.boolean().optional(),
+      })
       .parse(req.body);
 
     // Oldest first, so a conversation's first message decides its topic.
@@ -127,7 +131,7 @@ memoryRouter.post(
       }
     }
 
-    for (const topicId of touchedTopics) scheduleSummary(userId, topicId);
+    if (!skipSummaries) for (const topicId of touchedTopics) scheduleSummary(userId, topicId);
 
     const synced = results.filter((r) => r.status === 'synced').length;
     const skipped = results.filter((r) => r.status === 'skipped').length;

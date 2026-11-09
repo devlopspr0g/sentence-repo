@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "tsx tests/pure.test.ts",
+    "test": "tsx tests/pure.test.ts && tsx tests/import.test.ts",
+    "import-export": "tsx scripts/import-export.ts",
     "create-key": "tsx scripts/create-api-key.ts"
   },
   "engines": {

@@ -49,6 +49,26 @@ curl -X POST localhost:3000/v1/chat/completions $H -d '{"model":"claude-sonnet-4
 
 Response bodies carry `sentence: { provider, model, topic_id, conversation_id, context_items }`. Pass `"sentence": {"memory": false}` for an incognito call, or `"topic"` / `"conversation_id"` to steer where it is filed.
 
+## Import your existing ChatGPT / Claude history
+
+Chats you had before Sentence can be loaded into the shared memory, so every model knows your past work from day one. No provider API keys are needed for this.
+
+1. Export your data: ChatGPT: *Settings > Data controls > Export data*. Claude: *Settings > Privacy > Export data*. Unzip the file you receive by email.
+2. Preview, then import (pass `conversations.json`, or the folder; newer ChatGPT exports are split into `conversations-000.json`, ...):
+
+```bash
+npm run import-export -- ./chatgpt-export --dry-run
+npm run import-export -- ./chatgpt-export --url https://your-app.onrender.com --key sk-sent-...
+npm run import-export -- ./claude-export/conversations.json --since 2025-06-01
+```
+
+- Safe to re-run: every message has a stable id, so nothing is duplicated.
+- Each conversation becomes a topic named after its title; ChatGPT messages count as provider `openai`, Claude's as `anthropic` (so your consent settings for those providers apply).
+- Only plain chat text is imported (no images, files, tool or code-interpreter output). For ChatGPT, only the branch you last saw is imported, not regenerated alternatives.
+- Embedding runs on the server, roughly a fraction of a second per message, so large histories take a while; use `--since` to limit. The whole file is read into memory (fine up to a few hundred MB).
+- Summaries are not generated during import (that would call your model for every topic); each topic gets its summary the next time you chat in it.
+- The conversation ids are tied to the API key you import with. Re-import with the same key.
+
 ## API
 
 All under `/v1`, `Authorization: Bearer sk-sent-...` (except `GET /health`).
@@ -58,7 +78,7 @@ All under `/v1`, `Authorization: Bearer sk-sent-...` (except `GET /health`).
 | `POST /chat/completions` | Chat with any model; streaming supported |
 | `GET /models` | Models this user can reach (`provider/model` also works for OpenRouter, Mistral, DeepSeek, xAI, Fireworks, Perplexity, Cerebras, or any service you register with a `base_url`) |
 | `POST /keys` `GET /keys` `DELETE /keys/:provider` | Bring-your-own-key |
-| `POST /memory/messages` | SDK sync of the offline message queue |
+| `POST /memory/messages` | SDK sync of the offline message queue (also used by the importer; `skip_summaries` for bulk loads) |
 | `POST /memory/context` | The whisper for any AI app: `{query, provider}` |
 | `GET /memory/topics` `GET /memory/messages` | Browse memory |
 | `GET /memory/export` | Download everything |
@@ -88,4 +108,4 @@ POST /v1/jobs
 - Whisper text is untrusted by design (it contains model output): it is fenced, labelled as reference data, and cannot close its own tag.
 
 ## Not built yet
-Frontend, MCP connector for native ChatGPT/Claude apps, import of chat exports, end-to-end-encrypted tier, request rate limiting, automated integration tests against a live Supabase.
+Frontend, MCP connector for native ChatGPT/Claude apps, import of Gemini exports, end-to-end-encrypted tier, request rate limiting, automated integration tests against a live Supabase.
