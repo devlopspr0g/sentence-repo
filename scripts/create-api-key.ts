@@ -6,6 +6,7 @@
  * With no user id a new one is generated. The user id is the identity that owns memory,
  * grants and provider keys, so reuse the same id for all of one person's keys.
  */
+import 'dotenv/config'; // <-- Add this here
 import { randomBytes, randomUUID } from 'crypto';
 import { sha256Hex } from '../src/lib/crypto';
 import { getSupabase } from '../src/lib/supabase';
